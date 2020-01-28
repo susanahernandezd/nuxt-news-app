@@ -1,6 +1,6 @@
 # nuxt-news
 
-> My delightful Nuxt.js project
+> News app with Nuxt, VueMaterial, NewsAPI and Firebase
 
 ## Build Setup
 
