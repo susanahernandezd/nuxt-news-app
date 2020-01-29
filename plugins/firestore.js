@@ -12,9 +12,6 @@ if (!firebase.apps.length) {
     appId: "1:340865900697:web:5c441e207b480a184ad808"
   };
   firebase.initializeApp(config);
-  firebase.firestore().settings({
-    timestampsInSnapshots: true
-  });
 }
 
 const db = firebase.firestore();

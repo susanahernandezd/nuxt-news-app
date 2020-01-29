@@ -65,6 +65,10 @@ module.exports = {
     "/register/": {
       target: "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDbPrkcSaOcLiV88WAbDXVrqksnhySS2BA",
       pathRewrite: { "^/register/": "" }
+    },
+    "/login/": {
+      target: "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDbPrkcSaOcLiV88WAbDXVrqksnhySS2BA",
+      pathRewrite: { "^/login/": "" }
     }
   },
 
