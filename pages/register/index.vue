@@ -115,9 +115,3 @@ export default {
   }
 };
 </script>
-
-<style scoped lang="scss">
-  .text-alert {
-    color: #d32f2f;
-  }
-</style>

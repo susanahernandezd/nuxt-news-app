@@ -22,6 +22,8 @@
             <span class="md-error" v-else-if="!$v.form.password.minLength">Password too short</span>
             <span class="md-error" v-else-if="!$v.form.password.maxLength">Password too long</span>
           </md-field>
+
+          <span class="text-alert" v-if="error">{{error}}</span>
         </md-card-content>
 
         <md-card-actions>
@@ -74,7 +76,10 @@ export default {
     },
     isAuthenticated() {
       return this.$store.getters.isAuthenticated;
-    }
+    },
+    error() {
+      return this.$store.getters.error;
+    },
   },
   watch: {
     isAuthenticated(value) {

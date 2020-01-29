@@ -1,6 +1,9 @@
 import Vuex from 'vuex';
 import md5 from 'md5';
 import db from '~/plugins/firestore';
+import { saveUserData, clearUserData } from "~/utils/auth";
+
+const DEFAULT_ERROR_MESSAGE = 'There was an error, please try it later'
 
 export default () => {
   return new Vuex.Store({
@@ -34,6 +37,12 @@ export default () => {
       },
       error(state, error) {
         state.error = error
+      },
+      clearToken: state => {
+        state.token = ""
+      },
+      clearUser: state => {
+        state.user = null
       }
     },
     actions: {
@@ -71,11 +80,21 @@ export default () => {
           }
           commit("setUser", user);
           commit("setToken", authUserData.idToken);
-          commit("setLoading", false);
+          saveUserData(authUserData, user);
         } catch (err) {
-          console.error(err);
+          commit("error", err);
+        } finally {
           commit("setLoading", false);
+
         }
+      },
+      setLogoutTimer({ dispatch }, interval) {
+        setTimeout(() => dispatch("logoutUser"), interval);
+      },
+      logoutUser({ commit }) {
+        commit("clearToken");
+        commit("clearUser");
+        clearUserData();
       }
     },
     getters: {
@@ -89,8 +108,6 @@ export default () => {
         if(!error) {
           return
         }
-        const DEFAULT_ERROR_MESSAGE = 'There was an error, please try it later'
-        console.log('DINS:', error)
         const { response: { data: { error: { message = DEFAULT_ERROR_MESSAGE } = {} } = {} } = {} } = error
         return message
       }

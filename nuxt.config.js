@@ -2,7 +2,9 @@ const pkg = require('./package')
 
 module.exports = {
   mode: 'spa',
-
+  router: {
+    middleware: "check-auth"
+  },
   /*
   ** Headers of the page
   */
@@ -29,7 +31,8 @@ module.exports = {
   */
   css: [
     { src: 'vue-material/dist/vue-material.min.css', lang: 'css' },
-    { src: '~/assets/theme.scss', lang: 'scss'}
+    { src: '~/assets/styles/theme.scss', lang: 'scss'},
+    { src: '~/assets/styles/main.scss', lang: 'scss'}
   ],
 
   /*
