@@ -1,5 +1,6 @@
 import Vuex from 'vuex';
 import md5 from 'md5';
+import slugify from 'slugify';
 import db from '~/plugins/firestore';
 import { saveUserData, clearUserData } from "~/utils/auth";
 
@@ -9,6 +10,7 @@ export default () => {
   return new Vuex.Store({
     state: {
       headlines: [],
+      headline: null,
       feed: [],
       loading: false,
       token: "",
@@ -20,6 +22,9 @@ export default () => {
     mutations: {
       setHeadlines(state, headlines) {
         state.headlines = headlines;
+      },
+      setHeadline(state, headline) {
+        state.headline = headline;
       },
       setLoading(state, loading) {
         state.loading = loading;
@@ -56,8 +61,16 @@ export default () => {
       async loadHeadlines({ commit, state }, { country, category } = {}) {
         commit('setLoading', true);
         const { articles } = await this.$axios.$get(`/api/top-headlines?country=${country}&category=${category}`);
+        const headlines = articles.map(article => {
+          const slug = slugify(article.title, {
+            replacement: '-',
+            remove: /[^a-zA-Z0-9 -]/g,
+            lower: true
+          });
+          return { ...article, slug };
+        })
         commit('setLoading', false);
-        commit("setHeadlines", articles);
+        commit("setHeadlines", headlines);
       },
       async addHeadlineToFeed({ state }, headline) {
         const feedRef = db
@@ -127,6 +140,30 @@ export default () => {
 
         }
       },
+      async loadHeadline({ commit }, headlineSlug) {
+        const headlineRef = db.collection('headlines').doc(headlineSlug);
+
+        await headlineRef.get().then(doc => {
+          if (doc.exists) {
+            const headline = doc.data();
+            commit('setHeadline', headline);
+          }
+        })
+      },
+      async saveHeadline(context, headline) {
+        const headlineRef = db.collection('headlines').doc(headline.slug);
+
+        let headlineId;
+        await headlineRef.get().then(doc => {
+          if (doc.exists) {
+            headlineId = doc.id;
+          }
+        });
+
+        if (!headlineId) {
+          await headlineRef.set(headline);
+        }
+      },
       setLogoutTimer({ dispatch }, interval) {
         setTimeout(() => dispatch("logoutUser"), interval);
       },
@@ -138,6 +175,7 @@ export default () => {
     },
     getters: {
       headlines: ({ headlines }) => headlines,
+      headline: ({ headline }) => headline,
       feed: ({ feed }) => feed,
       loading: ({ loading }) => loading,
       user: ({ user }) => user,

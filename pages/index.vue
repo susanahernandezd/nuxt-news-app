@@ -133,7 +133,7 @@
                 <md-button @click="addHeadlineToFeed(headline)" class="md-icon-button" :class="isInFeed(headline.title)">
                     <md-icon>bookmark</md-icon>
                   </md-button>
-                <md-button class="md-icon-button">
+                <md-button @click="saveHeadline(headline)" class="md-icon-button">
                   <md-icon>message</md-icon>
                 </md-button>
               </md-card-actions>
@@ -199,6 +199,10 @@
       loadCategory(category) {
         this.$store.commit('setCategory', category);
         this.loadHeadlines()
+      },
+      async saveHeadline(headline) {
+        await this.$store.dispatch("saveHeadline", headline);
+        this.$router.push(`/headlines/${headline.slug}`);
       },
       changeCountry(country) {
         this.$store.commit("setCountry", country);
