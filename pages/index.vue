@@ -22,9 +22,37 @@
           <md-button to="/login">Login</md-button>
           <md-button to="/register">Register</md-button>
         </template>
+        <md-button class="md-primary" @click="showSearchDialog = true">Search</md-button>
         <md-button class="md-accent" @click="showRightSidepanel = true">Categories</md-button>
       </div>
     </md-toolbar>
+
+    <!-- Search Dialog -->
+    <md-dialog :md-active.sync="showSearchDialog">
+      <md-dialog-title>Search Headlines</md-dialog-title>
+
+      <div class="md-layout" style="padding: 1em">
+        <md-field>
+          <label>Search Term(s)</label>
+          <md-input v-model="search.query" placeholder="Use quotes for exact matches, AND / OR / NOT for multiple terms" maxlength="30"></md-input>
+        </md-field>
+        <md-datepicker v-model="search.fromDate" md-immediately><label>Select starting date (optional)</label></md-datepicker>
+        <md-datepicker v-model="search.toDate" md-immediately><label>Select ending date (optional)</label></md-datepicker>
+        <md-field>
+          <label for="sortBy">Sort search results by criteria (optional)</label>
+          <md-select v-model="search.sortBy" name="sortBy" id="sortBy" md-dense>
+            <md-option value="publishedAt">Newest (default)</md-option>
+            <md-option value="relevancy">Relevant</md-option>
+            <md-option value="popularity">Popular</md-option>
+          </md-select>
+        </md-field>
+      </div>
+
+      <md-dialog-actions>
+        <md-button class="md-accent" @click="showSearchDialog = false">Cancel</md-button>
+        <md-button class="md-primary" @click="searchHeadlines">Search</md-button>
+      </md-dialog-actions>
+    </md-dialog>
 
     <!-- Personal News Feed (Left Drawer) -->
     <md-drawer md-fixed :md-active.sync="showLeftSidepanel">
@@ -113,7 +141,7 @@
                 <div class="md-title">
                   <a :href="headline.url" target="_blank">{{headline.title}}</a>
                 </div>
-                <div>
+                <div v-if="headline.source.id" @click="loadSource(headline.source.id)">
                   {{headline.source.name}}
                   <md-icon class="small-icon">book</md-icon>
                 </div>
@@ -130,7 +158,11 @@
               <md-card-content>{{ headline.description }}</md-card-content>
 
               <md-card-actions>
-                <md-button @click="addHeadlineToFeed(headline)" class="md-icon-button" :class="isInFeed(headline.title)">
+                <md-button
+                   v-if="isAuthenticated"
+                   @click="addHeadlineToFeed(headline)" 
+                   class="md-icon-button" 
+                   :class="isInFeed(headline.title)">
                     <md-icon>bookmark</md-icon>
                   </md-button>
                 <md-button @click="saveHeadline(headline)" class="md-icon-button">
@@ -146,92 +178,135 @@
 </template>
 
 <script>
-  export default {
-    data: () => ({
-      showLeftSidepanel: false,
-      showRightSidepanel: false,
-      countryList: [
-        { name: 'United States', code: 'us'},
-        { name: 'Germany', code: 'de'},
-        { name: 'France', code: 'fr'},
-      ],
-      newsCategories: [
-        { name: 'Top Headlines', category: '', icon: 'today' },
-        { name: 'Technology', category: 'technology', icon: 'keyboard' },
-        { name: 'Business', category: 'business', icon: 'business_center' },
-        { name: 'Entertainment', category: 'entertainment', icon: 'weekend' },
-        { name: 'Health', category: 'health', icon: 'fastfood' },
-        { name: 'Science', category: 'science', icon: 'fingerprint' },
-        { name: 'Sports', category: 'sports', icon: 'golf_course' }
-      ]
-    }),
-    async fetch({ store }) {
-      await store.dispatch('loadHeadlines', {
-        country: store.state.country,
-        category: store.state.category
-      })
-      await store.dispatch("loadUserFeed");
+import { addQueryParams } from '~/utils/url';
+
+export default {
+  data: () => ({
+    showLeftSidepanel: false,
+    showRightSidepanel: false,
+    showSearchDialog: false,
+    countryList: [
+      { name: 'United States', code: 'us'},
+      { name: 'Germany', code: 'de'},
+      { name: 'France', code: 'fr'},
+    ],
+    newsCategories: [
+      { name: 'Top Headlines', category: '', icon: 'today' },
+      { name: 'Technology', category: 'technology', icon: 'keyboard' },
+      { name: 'Business', category: 'business', icon: 'business_center' },
+      { name: 'Entertainment', category: 'entertainment', icon: 'weekend' },
+      { name: 'Health', category: 'health', icon: 'fastfood' },
+      { name: 'Science', category: 'science', icon: 'fingerprint' },
+      { name: 'Sports', category: 'sports', icon: 'golf_course' }
+    ],
+    search: {
+      query: '',
+      fromDate: '',
+      toDate: '',
+      sortBy: ''
+    }
+  }),
+  async fetch({ store }) {
+    const url = addQueryParams('/api/top-headlines', {
+      country: store.state.country,
+      category: store.state.category
+    });
+    await store.dispatch('loadHeadlines', url)
+    await store.dispatch("loadUserFeed");
+  },
+  computed: {
+    headlines() {
+      return this.$store.getters.headlines;
     },
-    computed: {
-      headlines() {
-        return this.$store.getters.headlines;
-      },
-      feed() {
-        return this.$store.getters.feed;
-      },
-      category() {
-        return this.$store.getters.category;
-      },
-      country() {
-        return this.$store.getters.country;
-      },
-      loading() {
-        return this.$store.getters.loading;
-      },
-      user() {
-        return this.$store.getters.user;
-      },
-      isAuthenticated() {
-        return this.$store.getters.isAuthenticated;
+    feed() {
+      return this.$store.getters.feed;
+    },
+    category() {
+      return this.$store.getters.category;
+    },
+    country() {
+      return this.$store.getters.country;
+    },
+    source() {
+      return this.$store.getters.source;
+    },
+    loading() {
+      return this.$store.getters.loading;
+    },
+    user() {
+      return this.$store.getters.user;
+    },
+    isAuthenticated() {
+      return this.$store.getters.isAuthenticated;
+    }
+  },
+  methods: {
+    loadCategory(category) {
+      this.$store.commit('setCategory', category);
+      this.loadTopHeadlines({
+        country: this.country,
+        category: this.category
+      })
+    },
+    async loadSource(sourceId) {
+      if (sourceId) {
+        this.$store.commit('setSource', sourceId);
+        this.loadTopHeadlines({
+          sources: sourceId
+        })
       }
     },
-    methods: {
-      loadCategory(category) {
-        this.$store.commit('setCategory', category);
-        this.loadHeadlines()
-      },
-      async saveHeadline(headline) {
-        await this.$store.dispatch("saveHeadline", headline);
-        this.$router.push(`/headlines/${headline.slug}`);
-      },
-      changeCountry(country) {
-        this.$store.commit("setCountry", country);
-        this.loadHeadlines()
-      },
-      async loadHeadlines() {
-        await this.$store.dispatch('loadHeadlines', {
-          country: this.country,
-          category: this.category
-        })
-      },
-      async addHeadlineToFeed(headline) {
-        if (this.user) {
-          await this.$store.dispatch("addHeadlineToFeed", headline);
-        }
-      },
-      async removeHeadlineFromFeed(headline) {
-        await this.$store.dispatch('removeHeadlineFromFeed', headline);
-      },
-      logoutUser() {
-        this.$store.dispatch("logoutUser");
-      },
-      isInFeed(title) {
-        const inFeed =
-          this.feed.findIndex(headline => headline.title === title) > -1;
-        return inFeed ? "md-primary" : "";
+    async searchHeadlines() {
+      const { query, fromDate, sortBy, toDate } = this.search;
+      const params = {
+        q: query,
+        from: this.dateToISOString(fromDate),
+        to: this.dateToISOString(toDate),
+        sortBy
+      }
+      const url = addQueryParams('/api/everything', params);
+      await this.$store.dispatch('loadHeadlines', url)
+
+      this.showSearchDialog = false;
+    },
+    async saveHeadline(headline) {
+      await this.$store.dispatch("saveHeadline", headline);
+      this.$router.push(`/headlines/${headline.slug}`);
+    },
+    changeCountry(country) {
+      this.$store.commit("setCountry", country);
+      this.loadTopHeadlines({
+        country: this.country,
+        category: this.category
+      })
+    },
+    async loadTopHeadlines(params = {}) {
+      const url = addQueryParams('/api/top-headlines', params);
+      await this.$store.dispatch('loadHeadlines', url)
+    },
+    async addHeadlineToFeed(headline) {
+      if (this.user) {
+        await this.$store.dispatch("addHeadlineToFeed", headline);
+      }
+    },
+    async removeHeadlineFromFeed(headline) {
+      await this.$store.dispatch('removeHeadlineFromFeed', headline);
+    },
+    logoutUser() {
+      this.$store.dispatch("logoutUser");
+    },
+    isInFeed(title) {
+      const inFeed =
+        this.feed.findIndex(headline => headline.title === title) > -1;
+      return inFeed ? "md-primary" : "";
+    },
+    dateToISOString(date) {
+      if (date) {
+        return new Date(date).toISOString();
       }
     }
   }
+}
 </script>
 
 <style scoped lang="scss">

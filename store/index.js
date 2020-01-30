@@ -17,6 +17,7 @@ export default () => {
       user: null,
       category: '',
       country: 'us',
+      source: '',
       error: null
     },
     mutations: {
@@ -41,6 +42,9 @@ export default () => {
       setCountry(state, country) {
         state.country = country;
       },
+      setSource(state, source) {
+        state.source = source;
+      },
       error(state, error) {
         state.error = error
       },
@@ -58,9 +62,10 @@ export default () => {
       }
     },
     actions: {
-      async loadHeadlines({ commit, state }, { country, category } = {}) {
+      async loadHeadlines({ commit, state }, apiUrl) {
         commit('setLoading', true);
-        const { articles } = await this.$axios.$get(`/api/top-headlines?country=${country}&category=${category}`);
+        console.log('apiURL', apiUrl)
+        const { articles } = await this.$axios.$get(apiUrl);
         const headlines = articles.map(article => {
           const slug = slugify(article.title, {
             replacement: '-',
