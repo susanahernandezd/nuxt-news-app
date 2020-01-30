@@ -45,6 +45,31 @@
           </md-select>
         </md-field>
       </md-content>
+
+      <!-- Default Markup (if Feed Empty) -->
+      <md-empty-state class="md-primary" v-if="feed.length === 0 && !user" md-icon="bookmarks" md-label="Nothing in Feed" md-description="Login to bookmark headlines">
+        <md-button to='/login' class="md-primary md-raised">Login</md-button>
+      </md-empty-state>
+
+      <md-empty-state v-else-if="feed.length === 0" class="md-accent" md-icon="bookmark_outline" md-label="Nothing in Feed" md-description="Anything you bookmark will be safely stored here"></md-empty-state>
+
+      <!-- Feed Content (if Feed Not Empty) -->
+      <md-list class="md-triple-line" v-for="headline in feed" :key="headline.id">
+        <md-list-item>
+          <md-avatar><img :src="headline.urlToImage" :alt="headline.title"></md-avatar>
+
+            <div class="md-list-item-text">
+              <span><a :href="headline.url" target="_blank">{{headline.title}}</a></span>
+              <span>{{headline.source.name}}</span>
+              <span>View Comments</span>
+            </div>
+
+            <md-button @click="removeHeadlineFromFeed(headline)" class="md-icon-button md-list-action">
+              <md-icon class="md-accent">delete</md-icon>
+            </md-button>
+        </md-list-item>
+        <md-divider class="md-inset"></md-divider>
+      </md-list>
     </md-drawer>
 
     <!-- News Categories (Right Drawer) -->
@@ -81,27 +106,23 @@
             md-with-hover>
             <md-ripple>
               <md-card-media md-ratio="16:9">
-                <img 
-                  :src="headline.urlToImage" 
-                  :alt="headline.title">
+                <img :src="headline.urlToImage" :alt="headline.title">
               </md-card-media>
 
               <md-card-header>
                 <div class="md-title">
-                  <a :href="headline.url" 
-                    target="_blank">{{ headline.title }}</a>
+                  <a :href="headline.url" target="_blank">{{headline.title}}</a>
                 </div>
                 <div>
-                  {{ headline.source.name }}
+                  {{headline.source.name}}
                   <md-icon class="small-icon">book</md-icon>
                 </div>
-                <div class="md-subhead"
-                  v-if="headline.author">
-                  {{ headline.author }}
+                <div class="md-subhead" v-if="headline.author">
+                  {{headline.author}}
                   <md-icon class="small-icon">face</md-icon>
                 </div>
                 <div class="md-subhead">
-                  {{ headline.publishedAt }}
+                  {{headline.publishedAt}}
                   <md-icon class="small-icon">alarm</md-icon>
                 </div>
               </md-card-header>
@@ -109,9 +130,9 @@
               <md-card-content>{{ headline.description }}</md-card-content>
 
               <md-card-actions>
-                <md-button class="md-icon-button">
-                  <md-icon>bookmark</md-icon>
-                </md-button>
+                <md-button @click="addHeadlineToFeed(headline)" class="md-icon-button" :class="isInFeed(headline.title)">
+                    <md-icon>bookmark</md-icon>
+                  </md-button>
                 <md-button class="md-icon-button">
                   <md-icon>message</md-icon>
                 </md-button>
@@ -149,10 +170,14 @@
         country: store.state.country,
         category: store.state.category
       })
+      await store.dispatch("loadUserFeed");
     },
     computed: {
       headlines() {
-      return this.$store.getters.headlines;
+        return this.$store.getters.headlines;
+      },
+      feed() {
+        return this.$store.getters.feed;
       },
       category() {
         return this.$store.getters.category;
@@ -185,8 +210,21 @@
           category: this.category
         })
       },
+      async addHeadlineToFeed(headline) {
+        if (this.user) {
+          await this.$store.dispatch("addHeadlineToFeed", headline);
+        }
+      },
+      async removeHeadlineFromFeed(headline) {
+        await this.$store.dispatch('removeHeadlineFromFeed', headline);
+      },
       logoutUser() {
         this.$store.dispatch("logoutUser");
+      },
+      isInFeed(title) {
+        const inFeed =
+          this.feed.findIndex(headline => headline.title === title) > -1;
+        return inFeed ? "md-primary" : "";
       }
     }
   }

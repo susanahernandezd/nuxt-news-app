@@ -9,6 +9,7 @@ export default () => {
   return new Vuex.Store({
     state: {
       headlines: [],
+      feed: [],
       loading: false,
       token: "",
       user: null,
@@ -38,11 +39,17 @@ export default () => {
       error(state, error) {
         state.error = error
       },
+      setFeed(state, headlines) {
+        state.feed = headlines;
+      },
       clearToken: state => {
         state.token = ""
       },
       clearUser: state => {
         state.user = null
+      },
+      clearFeed: state => {
+        state.feed = []
       }
     },
     actions: {
@@ -51,6 +58,38 @@ export default () => {
         const { articles } = await this.$axios.$get(`/api/top-headlines?country=${country}&category=${category}`);
         commit('setLoading', false);
         commit("setHeadlines", articles);
+      },
+      async addHeadlineToFeed({ state }, headline) {
+        const feedRef = db
+          .collection(`users/${state.user.email}/feed`)
+          .doc(headline.title);
+
+        await feedRef.set(headline);
+      },
+      async loadUserFeed({ state, commit }) {
+        if (state.user) {
+          const feedRef = db.collection(`users/${state.user.email}/feed`);
+
+          await feedRef.onSnapshot(querySnapshot => {
+            let headlines = [];
+            querySnapshot.forEach(doc => {
+              headlines.push(doc.data());
+              commit("setFeed", headlines);
+            });
+
+            if (querySnapshot.empty) {
+              headlines = [];
+              commit("setFeed", headlines);
+            }
+          });
+        }
+      },
+      async removeHeadlineFromFeed({ state }, headline) {
+        const headlineRef = db
+          .collection(`users/${state.user.email}/feed`)
+          .doc(headline.title);
+
+        await headlineRef.delete();
       },
       async authenticateUser({ commit }, userPayload) {
         try {
@@ -99,6 +138,7 @@ export default () => {
     },
     getters: {
       headlines: ({ headlines }) => headlines,
+      feed: ({ feed }) => feed,
       loading: ({ loading }) => loading,
       user: ({ user }) => user,
       isAuthenticated: ({ token }) => !!token,
