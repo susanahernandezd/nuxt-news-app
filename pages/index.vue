@@ -89,7 +89,7 @@
             <div class="md-list-item-text">
               <span><a :href="headline.url" target="_blank">{{headline.title}}</a></span>
               <span>{{headline.source.name}}</span>
-              <span>View Comments</span>
+              <span @click="saveHeadline(headline)">View Comments</span>
             </div>
 
             <md-button @click="removeHeadlineFromFeed(headline)" class="md-icon-button md-list-action">
@@ -150,7 +150,7 @@
                   <md-icon class="small-icon">face</md-icon>
                 </div>
                 <div class="md-subhead">
-                  {{headline.publishedAt}}
+                  {{headline.publishedAt | publishedTimeToNow}}
                   <md-icon class="small-icon">alarm</md-icon>
                 </div>
               </md-card-header>

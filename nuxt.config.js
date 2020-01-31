@@ -41,7 +41,8 @@ module.exports = {
   plugins: [
     { src: '~/plugins/vue-material' },
     { src: '~/plugins/axios' },
-    { src: '~/plugins/firestore' }
+    { src: '~/plugins/firestore' },
+    { src: '~/plugins/filters/time' }
   ],
 
   /*

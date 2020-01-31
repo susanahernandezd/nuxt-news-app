@@ -40,7 +40,7 @@
           <md-avatar><img :src="comment.user.avatar" :alt="comment.user.username"></md-avatar>
             <div class="md-list-item-text">
               <span>{{comment.user.username}}</span>
-              <span>{{comment.publishedAt}}</span>
+              <span>{{comment.publishedAt | commentTimeToNow}}</span>
               <p>{{comment.text}}</p>
             </div>
 
@@ -51,21 +51,22 @@
         </md-list-item>
       </md-list>
 
-      <!-- Back Button -->
-      <md-button class="md-fixed md-fab-bottom-right md-fab md-primary" @click="$router.go(-1)">
-        <md-icon>arrow_back</md-icon>
-      </md-button>
+      <ButtonBack/>
     </div>
   </div>
 </template>
 
 <script>
 import uuidv4 from "uuid/v4";
+import ButtonBack from "@/components/ButtonBack"
 
 export default {
   data: () => ({
     text: ""
   }),
+  components: {
+    ButtonBack
+  },
   async fetch({ store, params }) {
     await store.dispatch("loadHeadline", params.slug);
   },

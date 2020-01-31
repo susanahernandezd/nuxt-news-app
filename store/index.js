@@ -3,6 +3,7 @@ import md5 from 'md5';
 import slugify from 'slugify';
 import db from '~/plugins/firestore';
 import { saveUserData, clearUserData } from "~/utils/auth";
+import DEFAULT_IMAGE from "~/assets/img/default-image.jpg";
 
 const DEFAULT_ERROR_MESSAGE = 'There was an error, please try it later'
 
@@ -64,7 +65,6 @@ export default () => {
     actions: {
       async loadHeadlines({ commit, state }, apiUrl) {
         commit('setLoading', true);
-        console.log('apiURL', apiUrl)
         const { articles } = await this.$axios.$get(apiUrl);
         const headlines = articles.map(article => {
           const slug = slugify(article.title, {
@@ -72,6 +72,10 @@ export default () => {
             remove: /[^a-zA-Z0-9 -]/g,
             lower: true
           });
+          if (!article.urlToImage) {
+            article.urlToImage = DEFAULT_IMAGE;
+          }
+
           return { ...article, slug };
         })
         commit('setLoading', false);

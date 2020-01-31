@@ -37,6 +37,8 @@
         {{form.email}} was successfully registered!
       </md-snackbar>
     </md-card>
+
+    <ButtonBack/>
   </div>
 </template>
 
@@ -48,6 +50,7 @@ import {
   minLength,
   maxLength
 } from "vuelidate/lib/validators";
+import ButtonBack from "@/components/ButtonBack"
 
 export default {
   middleware: "auth",
@@ -58,6 +61,9 @@ export default {
       password: ""
     }
   }),
+  components: {
+    ButtonBack
+  },
   validations: {
     form: {
       email: {
